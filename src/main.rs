@@ -7,69 +7,100 @@
 
 use std::rc::Rc;
 
+#[derive(Debug)]
 enum Transition {
-    Char(char),
-    Split,
+    Char { c: char, out: Rc<Option<State>> },
+    Split(Option<Rc<State>>, Option<Rc<State>>),
     Match,
 }
 
+impl Transition {
+    pub fn out(&self) -> Rc<Option<State>> {
+        match *self {
+            Transition::Char { c: _, ref out } => Rc::clone(out),
+            _ => unimplemented!(),
+        }
+    }
+}
+
+#[derive(Debug)]
 struct State {
     c: Transition,
-    out: Rc<Option<State>>,
-    out1: Rc<Option<State>>,
-    lastlist: i32,
 }
 
 impl State {
     pub fn new_char(c: char) -> Self {
         State {
-            c: Transition::Char(c),
-            out: Rc::new(None),
-            out1: Rc::new(None),
-            lastlist: 0,
+            c: Transition::Char {
+                c: c,
+                out: Rc::new(None),
+            },
+        }
+    }
+
+    pub fn new_split() -> Self {
+        State {
+            c: Transition::Split(None, None),
+        }
+    }
+
+    pub fn new_match() -> Self {
+        State {
+            c: Transition::Match,
         }
     }
 }
 
+#[derive(Debug)]
 struct Frag {
-    start: Rc<Option<State>>,
+    start: Rc<State>,
     out: Vec<Rc<Option<State>>>,
 }
 
 impl Frag {
-    pub fn new(start: Rc<Option<State>>, out: Vec<Rc<Option<State>>>) -> Self {
+    pub fn new(start: Rc<State>, out: Vec<Rc<Option<State>>>) -> Self {
         Frag { start, out }
-    }
-
-    pub fn out(&mut self, out: Vec<Rc<Option<State>>>) {
-        self.out = out;
-    }
-
-    pub fn patch(&mut self, s: &Rc<Option<State>>) {
-        self.out = self.out.iter().map(|_| Rc::clone(s)).collect();
     }
 }
 
-fn post2nfa(postfix: String) -> Rc<Option<State>> {
+// fn post2nfa(postfix: String) -> Rc<State> {
+fn post2nfa(postfix: String) -> Vec<Frag> {
     let mut stack: Vec<Frag> = vec![];
     // let stackp: Frag;
-    let e: Frag;
+    // let e: Frag;
 
-    postfix.chars().map(|x| match x {
-        '.' => {
-            let e2 = stack.pop().unwrap();
-            let mut e1 = stack.pop().unwrap();
-            e1.patch(&e2.start);
+    for x in postfix.chars() {
+        match x {
+            c => {
+                let s = State::new_char(c);
+                let list = vec![s.c.out()];
+                stack.push(Frag::new(Rc::new(s), list));
+            }
         }
-        c => {
-            let s = Rc::new(Some(State::new_char(c)));
-            stack.push(Frag::new(Rc::clone(&s), vec![Rc::clone(&(s.unwrap().out))]));
-        }
-    });
-    e.start
+    }
+    // postfix
+    //     .chars()
+    //     .map(|x| match x {
+    //     // '.' => {
+    //     //     let e2 = stack.pop();
+    //     //     let mut e1 = stack.pop();
+    //     //     // e1.patch(&e2.start);
+    //     // }
+    //     c => {
+    //         let s = State::new_char(c);
+    //         let list = vec![s.c.out()];
+    //         stack.push(Frag::new(Rc::new(s), list));
+    //     }
+    //     // _ => unimplemented!(),
+    // })
+    //     .collect();
+    // e.start
+    stack
 }
 
 fn main() {
-    let re = "abb.+.a.".to_owned();
-    println!("Hello, world!");
+    // let re = "abb.+.a.".to_owned();
+    let re = "abb".to_owned();
+    let bla = post2nfa(re);
+    println!("{:?}", bla);
 }
