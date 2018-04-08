@@ -11,43 +11,46 @@ use std::cell::RefCell;
 #[derive(Debug, Clone)]
 struct State {
     c: Option<char>,
-    out: RefCell<Vec<Option<RefCell<State>>>>,
+    out: Rc<RefCell<Vec<Option<Rc<RefCell<State>>>>>>,
 }
 
 impl State {
     pub fn new_char(c: char) -> Self {
         State {
             c: Some(c),
-            out: RefCell::new(vec![None]),
+            out: Rc::new(RefCell::new(vec![None])),
         }
     }
 
-    pub fn attach(&mut self, s: &RefCell<State>) {
-        for x in self.out.borrow_mut().iter_mut() {
-            *x = Some(RefCell::clone(s));
-        }
-    }
+    // pub fn attach(&mut self, s: &Rc<RefCell<State>>) {
+    //     for x in self.out.borrow_mut().iter_mut() {
+    //         *x = Some(Rc::clone(s));
+    //     }
+    // }
 }
 
 #[derive(Debug)]
 struct Frag {
-    start: RefCell<State>,
-    out: RefCell<Vec<Option<RefCell<State>>>>,
+    start: Rc<RefCell<State>>,
+    out: Rc<RefCell<Vec<Option<Rc<RefCell<State>>>>>>,
 }
 
 impl Frag {
-    pub fn new(start: RefCell<State>, out: RefCell<Vec<Option<RefCell<State>>>>) -> Self {
+    pub fn new(
+        start: Rc<RefCell<State>>,
+        out: Rc<RefCell<Vec<Option<Rc<RefCell<State>>>>>>,
+    ) -> Self {
         Frag { start, out }
     }
 
-    pub fn attach(&mut self, s: &RefCell<State>) {
+    pub fn attach(&mut self, s: &Rc<RefCell<State>>) {
         for x in self.out.borrow_mut().iter_mut() {
-            *x = Some(RefCell::clone(s));
+            *x = Some(Rc::clone(s));
         }
     }
 }
 
-fn post2nfa(postfix: String) -> RefCell<State> {
+fn post2nfa(postfix: String) -> Rc<RefCell<State>> {
     let mut stack: Vec<Frag> = vec![];
 
     for x in postfix.chars() {
@@ -55,31 +58,26 @@ fn post2nfa(postfix: String) -> RefCell<State> {
             '.' => {
                 let e2 = stack.pop().unwrap();
                 let mut e1 = stack.pop().unwrap();
-                println!("fu1: {:?}", e1);
                 e1.attach(&e2.start);
-                e1.start.borrow_mut().attach(&e2.start);
-                println!("fu2: {:?}", e1);
-                let e = Frag::new(RefCell::clone(&e1.start), RefCell::clone(&e2.out));
-                // println!("fu3: {:?}", e);
+                // e1.start.borrow_mut().attach(&e2.start);
+                let mut e = Frag::new(Rc::clone(&e1.start), Rc::clone(&e2.out));
                 stack.push(e);
             }
             c => {
                 let s = State::new_char(c);
-                let o = RefCell::clone(&s.out);
-                stack.push(Frag::new(RefCell::new(s), o));
+                let o = Rc::clone(&s.out);
+                stack.push(Frag::new(Rc::new(RefCell::new(s)), o));
             }
         }
-        // println!("bla: {}", x);
-        println!("{:#?}", stack);
     }
-    println!("{:?}", stack);
+    println!("{:#?}", stack);
     stack.pop().unwrap().start
 }
 
 fn main() {
     // let re = "abb.+.a.".to_owned();
-    // let re = "ab.c.".to_owned();
-    let re = "ab.".to_owned();
+    let re = "ab.c.".to_owned();
+    // let re = "ab.".to_owned();
     let bla = post2nfa(re);
-    println!("{:?}", bla);
+    // println!("{:?}", bla);
 }
