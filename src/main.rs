@@ -9,18 +9,29 @@ use std::rc::Rc;
 
 #[derive(Debug)]
 enum Transition {
-    Char { c: char, out: Rc<Option<State>> },
+    Char { c: char, out: Option<Rc<State>> },
     Split(Option<Rc<State>>, Option<Rc<State>>),
     Match,
 }
 
 impl Transition {
-    pub fn out(&self) -> Rc<Option<State>> {
+    pub fn out(&self) -> Option<Rc<State>> {
         match *self {
-            Transition::Char { c: _, ref out } => Rc::clone(out),
+            Transition::Char {
+                c: _,
+                out: Some(ref out),
+            } => Some(Rc::clone(out)),
+            Transition::Char { c: _, out: None } => None,
             _ => unimplemented!(),
         }
     }
+
+    // pub fn set_out(self, o: Rc<State>) -> Self {
+    //     match self {
+    //         Transition::Char { c, out: _ } => Transition::Char { c, out: Some(o) },
+    //         _ => unimplemented!(),
+    //     }
+    // }
 }
 
 #[derive(Debug)]
@@ -29,12 +40,9 @@ struct State {
 }
 
 impl State {
-    pub fn new_char(c: char) -> Self {
+    pub fn new_char(c: char, out: Option<Rc<State>>) -> Self {
         State {
-            c: Transition::Char {
-                c: c,
-                out: Rc::new(None),
-            },
+            c: Transition::Char { c, out },
         }
     }
 
@@ -49,58 +57,53 @@ impl State {
             c: Transition::Match,
         }
     }
+
+    pub fn get_char(&self) -> char {
+        match self.c {
+            Transition::Char { c, out: _ } => c,
+            _ => unimplemented!(),
+        }
+    }
 }
 
 #[derive(Debug)]
 struct Frag {
     start: Rc<State>,
-    out: Vec<Rc<Option<State>>>,
+    // out: Vec<Option<Rc<State>>>,
 }
 
 impl Frag {
-    pub fn new(start: Rc<State>, out: Vec<Rc<Option<State>>>) -> Self {
-        Frag { start, out }
+    pub fn new(start: Rc<State>) -> Self {
+        Frag { start }
     }
 }
 
-// fn post2nfa(postfix: String) -> Rc<State> {
-fn post2nfa(postfix: String) -> Vec<Frag> {
+fn post2nfa(postfix: String) -> Rc<State> {
     let mut stack: Vec<Frag> = vec![];
-    // let stackp: Frag;
-    // let e: Frag;
 
     for x in postfix.chars() {
         match x {
+            '.' => {
+                let e2 = stack.pop().unwrap();
+                let mut e1 = stack.pop().unwrap();
+                e1 = Frag::new(Rc::new(State::new_char(
+                    e1.start.get_char(),
+                    Some(Rc::clone(&e2.start)),
+                )));
+                stack.push(Frag::new(Rc::clone(&e1.start)));
+            }
             c => {
-                let s = State::new_char(c);
-                let list = vec![s.c.out()];
-                stack.push(Frag::new(Rc::new(s), list));
+                let s = State::new_char(c, None);
+                stack.push(Frag::new(Rc::new(s)));
             }
         }
     }
-    // postfix
-    //     .chars()
-    //     .map(|x| match x {
-    //     // '.' => {
-    //     //     let e2 = stack.pop();
-    //     //     let mut e1 = stack.pop();
-    //     //     // e1.patch(&e2.start);
-    //     // }
-    //     c => {
-    //         let s = State::new_char(c);
-    //         let list = vec![s.c.out()];
-    //         stack.push(Frag::new(Rc::new(s), list));
-    //     }
-    //     // _ => unimplemented!(),
-    // })
-    //     .collect();
-    // e.start
-    stack
+    stack.pop().unwrap().start
 }
 
 fn main() {
     // let re = "abb.+.a.".to_owned();
-    let re = "abb".to_owned();
+    let re = "ab.c.".to_owned();
     let bla = post2nfa(re);
     println!("{:?}", bla);
 }
