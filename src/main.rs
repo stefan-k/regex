@@ -10,20 +10,12 @@ use std::cell::RefCell;
 
 #[derive(Debug)]
 struct State(Rc<RefCell<RState>>);
-// enum State {
-//     State(Rc<RefCell<RState>>),
-//     NoState,
-// }
 
 #[derive(Debug, Clone)]
 enum RState {
     RRState { c: Option<char>, out: OutVec },
     NoState,
 }
-// struct RState {
-//     c: Option<char>,
-//     out: OutVec,
-// }
 
 impl Clone for State {
     fn clone(&self) -> Self {
@@ -59,12 +51,6 @@ impl State {
         }
         panic!("fu");
     }
-
-    // pub fn replace(&mut self, s: &State) {
-    //     if let State(ref s) = *self {
-    //         s.replace(s.clone());
-    //     }
-    // }
 }
 
 #[derive(Debug)]
@@ -132,7 +118,6 @@ fn post2nfa(postfix: String) -> State {
                 let e2 = stack.pop().unwrap();
                 let mut e1 = stack.pop().unwrap();
                 e1.attach(&e2.start);
-                // println!("{:#?}", e1);
                 let mut e = Frag::new(e1.start.clone(), e2.out.clone());
                 stack.push(e);
             }
