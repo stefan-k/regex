@@ -8,49 +8,72 @@
 use std::rc::Rc;
 use std::cell::RefCell;
 
+#[derive(Debug)]
+struct State(Rc<RefCell<RState>>);
+
 #[derive(Debug, Clone)]
-struct State {
+struct RState {
     c: Option<char>,
-    out: Rc<RefCell<Vec<Option<Rc<RefCell<State>>>>>>,
+    out: OutVec,
+}
+
+impl Clone for State {
+    fn clone(&self) -> Self {
+        let State(ref s) = *self;
+        State(Rc::clone(&s))
+    }
 }
 
 impl State {
     pub fn new_char(c: char) -> Self {
-        State {
+        State(Rc::new(RefCell::new(RState {
             c: Some(c),
-            out: Rc::new(RefCell::new(vec![None])),
-        }
+            out: OutVec(Rc::new(RefCell::new(vec![None]))),
+        })))
     }
 
-    // pub fn attach(&mut self, s: &Rc<RefCell<State>>) {
-    //     for x in self.out.borrow_mut().iter_mut() {
-    //         *x = Some(Rc::clone(s));
-    //     }
-    // }
+    pub fn clone_out(&self) -> OutVec {
+        let State(ref s) = *self;
+        s.borrow_mut().out.clone()
+    }
+}
+
+#[derive(Debug)]
+struct OutVec(Rc<RefCell<Vec<Option<State>>>>);
+
+impl Clone for OutVec {
+    fn clone(&self) -> Self {
+        let OutVec(ref o) = *self;
+        OutVec(Rc::clone(o))
+    }
+}
+
+impl OutVec {
+    pub fn attach(&mut self, s: &State) {
+        let OutVec(ref mut o) = *self;
+        for x in o.borrow_mut().iter_mut() {
+            *x = Some(s.clone());
+        }
+    }
 }
 
 #[derive(Debug)]
 struct Frag {
-    start: Rc<RefCell<State>>,
-    out: Rc<RefCell<Vec<Option<Rc<RefCell<State>>>>>>,
+    start: State,
+    out: OutVec,
 }
 
 impl Frag {
-    pub fn new(
-        start: Rc<RefCell<State>>,
-        out: Rc<RefCell<Vec<Option<Rc<RefCell<State>>>>>>,
-    ) -> Self {
+    pub fn new(start: State, out: OutVec) -> Self {
         Frag { start, out }
     }
 
-    pub fn attach(&mut self, s: &Rc<RefCell<State>>) {
-        for x in self.out.borrow_mut().iter_mut() {
-            *x = Some(Rc::clone(s));
-        }
+    pub fn attach(&mut self, s: &State) {
+        self.out.attach(s);
     }
 }
 
-fn post2nfa(postfix: String) -> Rc<RefCell<State>> {
+fn post2nfa(postfix: String) -> State {
     let mut stack: Vec<Frag> = vec![];
 
     for x in postfix.chars() {
@@ -59,14 +82,13 @@ fn post2nfa(postfix: String) -> Rc<RefCell<State>> {
                 let e2 = stack.pop().unwrap();
                 let mut e1 = stack.pop().unwrap();
                 e1.attach(&e2.start);
-                // e1.start.borrow_mut().attach(&e2.start);
-                let mut e = Frag::new(Rc::clone(&e1.start), Rc::clone(&e2.out));
+                let mut e = Frag::new(e1.start.clone(), e2.out.clone());
                 stack.push(e);
             }
             c => {
                 let s = State::new_char(c);
-                let o = Rc::clone(&s.out);
-                stack.push(Frag::new(Rc::new(RefCell::new(s)), o));
+                let o = s.clone_out();
+                stack.push(Frag::new(s, o));
             }
         }
     }
