@@ -28,7 +28,14 @@ impl State {
     pub fn new_char(c: char) -> Self {
         State(Rc::new(RefCell::new(RState {
             c: Some(c),
-            out: OutVec(Rc::new(RefCell::new(vec![None]))),
+            out: OutVec::new(vec![None]),
+        })))
+    }
+
+    pub fn new_split(o0: State, o1: State) -> Self {
+        State(Rc::new(RefCell::new(RState {
+            c: None,
+            out: OutVec::new(vec![Some(o0), Some(o1)]),
         })))
     }
 
@@ -49,12 +56,29 @@ impl Clone for OutVec {
 }
 
 impl OutVec {
+    pub fn new(v: Vec<Option<State>>) -> Self {
+        OutVec(Rc::new(RefCell::new(v)))
+    }
+
     pub fn attach(&mut self, s: &State) {
         let OutVec(ref mut o) = *self;
         for x in o.borrow_mut().iter_mut() {
             *x = Some(s.clone());
         }
     }
+}
+
+fn append(o0: &OutVec, o1: &OutVec) -> OutVec {
+    let OutVec(ref o0) = *o0;
+    let OutVec(ref o1) = *o1;
+    let mut o = vec![];
+    for oo in o0.borrow().iter() {
+        o.push(oo.clone());
+    }
+    for oo in o1.borrow().iter() {
+        o.push(oo.clone());
+    }
+    OutVec::new(o)
 }
 
 #[derive(Debug)]
@@ -85,6 +109,13 @@ fn post2nfa(postfix: String) -> State {
                 let mut e = Frag::new(e1.start.clone(), e2.out.clone());
                 stack.push(e);
             }
+            '|' => {
+                let e2 = stack.pop().unwrap();
+                let e1 = stack.pop().unwrap();
+                let s = State::new_split(e1.start.clone(), e2.start.clone());
+                let mut e = Frag::new(s, append(&e1.out, &e2.out));
+                stack.push(e);
+            }
             c => {
                 let s = State::new_char(c);
                 let o = s.clone_out();
@@ -98,8 +129,9 @@ fn post2nfa(postfix: String) -> State {
 
 fn main() {
     // let re = "abb.+.a.".to_owned();
-    let re = "ab.c.".to_owned();
+    // let re = "ab.c.".to_owned();
     // let re = "ab.".to_owned();
+    let re = "ab|".to_owned();
     let bla = post2nfa(re);
     // println!("{:?}", bla);
 }
