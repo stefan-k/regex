@@ -10,43 +10,65 @@ use std::cell::RefCell;
 
 #[derive(Debug)]
 struct State(Rc<RefCell<RState>>);
+// enum State {
+//     State(Rc<RefCell<RState>>),
+//     NoState,
+// }
 
 #[derive(Debug, Clone)]
-struct RState {
-    c: Option<char>,
-    out: OutVec,
+enum RState {
+    RRState { c: Option<char>, out: OutVec },
+    NoState,
 }
+// struct RState {
+//     c: Option<char>,
+//     out: OutVec,
+// }
 
 impl Clone for State {
     fn clone(&self) -> Self {
         let State(ref s) = *self;
-        State(Rc::clone(&s))
+        return State(Rc::clone(&s));
     }
 }
 
 impl State {
+    pub fn new_empty() -> Self {
+        State(Rc::new(RefCell::new(RState::NoState)))
+    }
+
     pub fn new_char(c: char) -> Self {
-        State(Rc::new(RefCell::new(RState {
+        State(Rc::new(RefCell::new(RState::RRState {
             c: Some(c),
-            out: OutVec::new(vec![None]),
+            out: OutVec::new(vec![State::new_empty()]),
         })))
     }
 
     pub fn new_split(o0: State, o1: State) -> Self {
-        State(Rc::new(RefCell::new(RState {
+        State(Rc::new(RefCell::new(RState::RRState {
             c: None,
-            out: OutVec::new(vec![Some(o0), Some(o1)]),
+            out: OutVec::new(vec![o0, o1]),
         })))
     }
 
     pub fn clone_out(&self) -> OutVec {
         let State(ref s) = *self;
-        s.borrow_mut().out.clone()
+        match s.borrow().clone() {
+            RState::RRState { c: _, out: o } => return o.clone(),
+            _ => unimplemented!(),
+        }
+        panic!("fu");
     }
+
+    // pub fn replace(&mut self, s: &State) {
+    //     if let State(ref s) = *self {
+    //         s.replace(s.clone());
+    //     }
+    // }
 }
 
 #[derive(Debug)]
-struct OutVec(Rc<RefCell<Vec<Option<State>>>>);
+struct OutVec(Rc<RefCell<Vec<State>>>);
 
 impl Clone for OutVec {
     fn clone(&self) -> Self {
@@ -56,14 +78,18 @@ impl Clone for OutVec {
 }
 
 impl OutVec {
-    pub fn new(v: Vec<Option<State>>) -> Self {
+    pub fn new(v: Vec<State>) -> Self {
         OutVec(Rc::new(RefCell::new(v)))
     }
 
     pub fn attach(&mut self, s: &State) {
         let OutVec(ref mut o) = *self;
         for x in o.borrow_mut().iter_mut() {
-            *x = Some(s.clone());
+            let State(ref mut a) = x;
+            let State(ref b) = s;
+            a.replace(b.borrow().clone());
+            // the same as:
+            // std::mem::replace(&mut *a.borrow_mut(), b.borrow().clone());
         }
     }
 }
@@ -106,6 +132,7 @@ fn post2nfa(postfix: String) -> State {
                 let e2 = stack.pop().unwrap();
                 let mut e1 = stack.pop().unwrap();
                 e1.attach(&e2.start);
+                // println!("{:#?}", e1);
                 let mut e = Frag::new(e1.start.clone(), e2.out.clone());
                 stack.push(e);
             }
@@ -131,7 +158,7 @@ fn main() {
     // let re = "abb.+.a.".to_owned();
     // let re = "ab.c.".to_owned();
     // let re = "ab.".to_owned();
-    let re = "ab|".to_owned();
+    let re = "ab|c.".to_owned();
     let bla = post2nfa(re);
     // println!("{:?}", bla);
 }
