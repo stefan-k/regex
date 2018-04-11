@@ -140,7 +140,7 @@ fn post2nfa(postfix: String) -> State {
                 let e3 = e1.start.clone();
                 e1.attach(&e3);
                 let s = State::new_split(e1.start.clone(), e2.clone());
-                let mut e = Frag::new(s, append(&e1.out, &OutVec::new(vec![e2.clone()])));
+                let mut e = Frag::new(s.clone(), s.clone_out());
                 stack.push(e);
             }
             c => {
