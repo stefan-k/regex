@@ -54,23 +54,23 @@ impl State {
 }
 
 #[derive(Debug)]
-struct OutVec(Rc<RefCell<Vec<State>>>);
+struct OutVec(Vec<State>);
 
 impl Clone for OutVec {
     fn clone(&self) -> Self {
         let OutVec(ref o) = *self;
-        OutVec(Rc::clone(o))
+        OutVec::new(o.iter().map(|x| x.clone()).collect())
     }
 }
 
 impl OutVec {
     pub fn new(v: Vec<State>) -> Self {
-        OutVec(Rc::new(RefCell::new(v)))
+        OutVec(v)
     }
 
     pub fn attach(&mut self, s: &State) {
         let OutVec(ref mut o) = *self;
-        for x in o.borrow_mut().iter_mut() {
+        for x in o.iter_mut() {
             let State(ref mut a) = x;
             let State(ref b) = s;
             a.replace(b.borrow().clone());
@@ -84,10 +84,10 @@ fn append(o0: &OutVec, o1: &OutVec) -> OutVec {
     let OutVec(ref o0) = *o0;
     let OutVec(ref o1) = *o1;
     let mut o = vec![];
-    for oo in o0.borrow().iter() {
+    for oo in o0.iter() {
         o.push(oo.clone());
     }
-    for oo in o1.borrow().iter() {
+    for oo in o1.iter() {
         o.push(oo.clone());
     }
     OutVec::new(o)
