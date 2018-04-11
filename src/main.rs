@@ -143,6 +143,15 @@ fn post2nfa(postfix: String) -> State {
                 let mut e = Frag::new(s.clone(), s.clone_out());
                 stack.push(e);
             }
+            '+' => {
+                let mut e1 = stack.pop().unwrap();
+                let e2 = State::new_empty();
+                let e3 = e1.start.clone();
+                e1.attach(&e3);
+                let s = State::new_split(e1.start.clone(), e2.clone());
+                let mut e = Frag::new(e1.start.clone(), s.clone_out());
+                stack.push(e);
+            }
             c => {
                 let s = State::new_char(c);
                 let o = s.clone_out();
@@ -160,7 +169,7 @@ fn main() {
     // let re = "ab.".to_owned();
     // let re = "ab|c.".to_owned();
     // let re = "a?".to_owned();
-    let re = "a*".to_owned();
+    let re = "a+".to_owned();
     let bla = post2nfa(re);
     // println!("{:?}", bla);
 }
