@@ -74,6 +74,5 @@ pub fn post2nfa(postfix: String) -> State {
             }
         }
     }
-    println!("{:#?}", stack);
     stack.pop().unwrap().start
 }
