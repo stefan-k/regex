@@ -74,5 +74,7 @@ pub fn post2nfa(postfix: String) -> State {
             }
         }
     }
-    stack.pop().unwrap().start
+    let mut e = stack.pop().unwrap();
+    e.attach(&State::new_matching());
+    e.start
 }

@@ -14,6 +14,7 @@ pub struct State(Rc<RefCell<RState>>);
 #[derive(Debug, Clone)]
 enum RState {
     RRState { c: Option<char>, out: OutVec },
+    Matching,
     NoState,
 }
 
@@ -34,6 +35,10 @@ impl State {
             c: Some(c),
             out: OutVec::new(vec![State::new_empty()]),
         })))
+    }
+
+    pub fn new_matching() -> Self {
+        State(Rc::new(RefCell::new(RState::Matching)))
     }
 
     pub fn new_split(o0: State, o1: State) -> Self {
