@@ -8,11 +8,12 @@
 use std::rc::Rc;
 use std::cell::RefCell;
 
-#[derive(Debug)]
-pub struct State(Rc<RefCell<RState>>);
+#[derive(Debug, PartialEq)]
+pub struct State(pub Rc<RefCell<RState>>);
 
-#[derive(Debug, Clone)]
-enum RState {
+// Shouldnt be public!!! fix this (needed in List in main.rs)
+#[derive(Debug, Clone, PartialEq)]
+pub enum RState {
     RRState { c: Option<char>, out: OutVec },
     Matching,
     NoState,
@@ -57,7 +58,7 @@ impl State {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct OutVec(Vec<State>);
 
 impl Clone for OutVec {
