@@ -65,10 +65,11 @@ pub fn post2nfa(postfix: String) -> State {
             // one or more
             '+' => {
                 let mut e1 = stack.pop().unwrap();
-                let e2 = State::new_empty();
+                let s2 = State::new_empty();
                 let e3 = e1.start.clone();
-                e1.attach(&e3);
-                let s = State::new_split(e1.start.clone(), e2.clone());
+                // e1.attach(&e3);
+                let s = State::new_split(e1.start.clone(), s2.clone());
+                e1.attach(&s);
                 let mut e = Frag::new(e1.start.clone(), s.clone_out());
                 stack.push(e);
             }

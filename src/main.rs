@@ -14,12 +14,11 @@ use fa::RState::Matching;
 
 struct List {
     s: Vec<State>,
-    n: i32,
 }
 
 impl List {
     pub fn new() -> Self {
-        List { s: vec![], n: 0 }
+        List { s: vec![] }
     }
 
     pub fn is_match(&self) -> bool {
@@ -76,12 +75,12 @@ fn main() {
     // let re = "ab.c.".to_owned();
     // let re = "ab.".to_owned();
     // let re = "ab|c.".to_owned();
-    let re = "a?".to_owned();
-    // let re = "a+".to_owned();
+    // let re = "a?".to_owned();
+    let re = "a+".to_owned();
     // let re = "a*".to_owned();
     let start = post2nfa(re);
     // println!("{:#?}", start);
-    let input = "a".to_owned();
+    let input = "aa".to_owned();
     // let input = "abbbba".to_owned();
     let bla = fa_match(&start, input);
     println!("{:#?}", bla);

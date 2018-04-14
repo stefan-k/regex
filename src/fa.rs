@@ -109,19 +109,21 @@ impl OutVec {
         OutVec(v)
     }
 
-    pub fn get(&self, i: usize) -> State {
-        let OutVec(ref o) = *self;
-        o[i].clone()
-    }
+    // pub fn get(&self, i: usize) -> State {
+    //     let OutVec(ref o) = *self;
+    //     o[i].clone()
+    // }
 
     pub fn attach(&mut self, s: &State) {
         let OutVec(ref mut o) = *self;
         for x in o.iter_mut() {
             let State(ref mut a) = x;
             let State(ref b) = s;
-            a.replace(b.borrow().clone());
-            // the same as:
-            // std::mem::replace(&mut *a.borrow_mut(), b.borrow().clone());
+            if a.borrow().clone() == RState::NoState {
+                a.replace(b.borrow().clone());
+                // the same as:
+                // std::mem::replace(&mut *a.borrow_mut(), b.borrow().clone());
+            }
         }
     }
 }
