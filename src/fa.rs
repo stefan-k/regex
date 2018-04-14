@@ -43,9 +43,9 @@ impl State {
         State(Rc::new(RefCell::new(RState::Matching)))
     }
 
-    pub fn new_split(o0: State, o1: State) -> Self {
+    pub fn new_split(o0: &State, o1: &State) -> Self {
         State(Rc::new(RefCell::new(RState::Split {
-            out: OutVec::new(vec![o0, o1]),
+            out: OutVec::new(vec![o0.clone(), o1.clone()]),
         })))
     }
 

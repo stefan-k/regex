@@ -14,8 +14,11 @@ struct Frag {
 }
 
 impl Frag {
-    pub fn new(start: State, out: OutVec) -> Self {
-        Frag { start, out }
+    pub fn new(start: &State, out: &OutVec) -> Self {
+        Frag {
+            start: start.clone(),
+            out: out.clone(),
+        }
     }
 
     pub fn attach(&mut self, s: &State) {
@@ -33,52 +36,47 @@ pub fn post2nfa(postfix: String) -> State {
                 let e2 = stack.pop().unwrap();
                 let mut e1 = stack.pop().unwrap();
                 e1.attach(&e2.start);
-                let mut e = Frag::new(e1.start.clone(), e2.out.clone());
+                let mut e = Frag::new(&e1.start, &e2.out);
                 stack.push(e);
             }
             // alternation
             '|' => {
                 let e2 = stack.pop().unwrap();
                 let e1 = stack.pop().unwrap();
-                let s = State::new_split(e1.start.clone(), e2.start.clone());
-                let mut e = Frag::new(s, append(&e1.out, &e2.out));
+                let s = State::new_split(&e1.start, &e2.start);
+                let mut e = Frag::new(&s, &append(&e1.out, &e2.out));
                 stack.push(e);
             }
             // zero or one
             '?' => {
                 let e1 = stack.pop().unwrap();
                 let e2 = State::new_empty();
-                let s = State::new_split(e1.start.clone(), e2.clone());
-                let mut e = Frag::new(s, append(&e1.out, &OutVec::new(vec![e2.clone()])));
+                let s = State::new_split(&e1.start, &e2);
+                let mut e = Frag::new(&s, &append(&e1.out, &OutVec::new(vec![e2.clone()])));
                 stack.push(e);
             }
             // zero or more
             '*' => {
                 let mut e1 = stack.pop().unwrap();
                 let e2 = State::new_empty();
-                // let e3 = e1.start.clone();
-                // e1.attach(&e3);
-                let s = State::new_split(e1.start.clone(), e2.clone());
+                let s = State::new_split(&e1.start, &e2);
                 e1.attach(&s);
-                let mut e = Frag::new(s.clone(), s.clone_out());
+                let mut e = Frag::new(&s, &s.clone_out());
                 stack.push(e);
             }
             // one or more
             '+' => {
                 let mut e1 = stack.pop().unwrap();
                 let s2 = State::new_empty();
-                // let e3 = e1.start.clone();
-                // e1.attach(&e3);
-                let s = State::new_split(e1.start.clone(), s2.clone());
+                let s = State::new_split(&e1.start, &s2);
                 e1.attach(&s);
-                let mut e = Frag::new(e1.start.clone(), s.clone_out());
+                let mut e = Frag::new(&e1.start, &s.clone_out());
                 stack.push(e);
             }
             // character
             c => {
                 let s = State::new_char(c);
-                let o = s.clone_out();
-                stack.push(Frag::new(s, o));
+                stack.push(Frag::new(&s, &s.clone_out()));
             }
         }
     }
