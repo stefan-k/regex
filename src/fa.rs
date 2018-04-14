@@ -14,7 +14,8 @@ pub struct State(pub Rc<RefCell<RState>>);
 // Shouldnt be public!!! fix this (needed in List in main.rs)
 #[derive(Debug, Clone, PartialEq)]
 pub enum RState {
-    RRState { c: Option<char>, out: OutVec },
+    Char { c: Option<char>, out: OutVec },
+    Split { out: OutVec },
     Matching,
     NoState,
 }
@@ -32,7 +33,7 @@ impl State {
     }
 
     pub fn new_char(c: char) -> Self {
-        State(Rc::new(RefCell::new(RState::RRState {
+        State(Rc::new(RefCell::new(RState::Char {
             c: Some(c),
             out: OutVec::new(vec![State::new_empty()]),
         })))
@@ -43,8 +44,11 @@ impl State {
     }
 
     pub fn new_split(o0: State, o1: State) -> Self {
-        State(Rc::new(RefCell::new(RState::RRState {
-            c: None,
+        // State(Rc::new(RefCell::new(RState::Char {
+        //     c: None,
+        //     out: OutVec::new(vec![o0, o1]),
+        // })))
+        State(Rc::new(RefCell::new(RState::Split {
             out: OutVec::new(vec![o0, o1]),
         })))
     }
@@ -52,8 +56,18 @@ impl State {
     pub fn clone_out(&self) -> OutVec {
         let State(ref s) = *self;
         match s.borrow().clone() {
-            RState::RRState { c: _, out: o } => return o.clone(),
+            RState::Char { c: _, out: o } => return o.clone(),
             _ => unimplemented!(),
+        }
+    }
+
+    pub fn is_split(&self) -> bool {
+        let State(ref s) = self;
+        // Is there a fancier way to do this?
+        if let RState::Split { out: _ } = s.borrow().clone() {
+            true
+        } else {
+            false
         }
     }
 }
