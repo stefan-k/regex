@@ -56,7 +56,6 @@ fn fa_match(start: &State, s: String) -> bool {
     for c in s.chars() {
         nlist.clear();
         for st in clist.s.iter() {
-            // if st.is_split() || st.is_matching() {
             if !st.is_matching() {
                 if st.is_split() {
                     nlist.add_start(&st);
@@ -76,11 +75,11 @@ fn main() {
     // let re = "ab.".to_owned();
     // let re = "ab|c.".to_owned();
     // let re = "a?".to_owned();
-    let re = "a+".to_owned();
-    // let re = "a*".to_owned();
+    // let re = "a+".to_owned();
+    let re = "a*".to_owned();
     let start = post2nfa(re);
     // println!("{:#?}", start);
-    let input = "aa".to_owned();
+    let input = "".to_owned();
     // let input = "abbbba".to_owned();
     let bla = fa_match(&start, input);
     println!("{:#?}", bla);
