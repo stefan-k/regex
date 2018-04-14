@@ -57,6 +57,16 @@ impl State {
         let State(ref s) = *self;
         match s.borrow().clone() {
             RState::Char { c: _, out: o } => return o.clone(),
+            RState::Split { out: o } => return o.clone(),
+            _ => unimplemented!(),
+        }
+    }
+
+    pub fn get_out(&self, idx: usize) -> State {
+        let State(ref s) = *self;
+        match s.borrow().clone() {
+            RState::Char { c: _, out: o } => return o.get(0),
+            RState::Split { out: o } => return o.get(idx),
             _ => unimplemented!(),
         }
     }
@@ -85,6 +95,11 @@ impl Clone for OutVec {
 impl OutVec {
     pub fn new(v: Vec<State>) -> Self {
         OutVec(v)
+    }
+
+    pub fn get(&self, i: usize) -> State {
+        let OutVec(ref o) = *self;
+        o[i].clone()
     }
 
     pub fn attach(&mut self, s: &State) {
