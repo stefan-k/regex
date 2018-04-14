@@ -44,10 +44,6 @@ impl State {
     }
 
     pub fn new_split(o0: State, o1: State) -> Self {
-        // State(Rc::new(RefCell::new(RState::Char {
-        //     c: None,
-        //     out: OutVec::new(vec![o0, o1]),
-        // })))
         State(Rc::new(RefCell::new(RState::Split {
             out: OutVec::new(vec![o0, o1]),
         })))
@@ -62,11 +58,19 @@ impl State {
         }
     }
 
-    pub fn get_out(&self, idx: usize) -> State {
+    // pub fn get_out(&self, idx: usize) -> State {
+    //     let State(ref s) = *self;
+    //     match s.borrow().clone() {
+    //         RState::Char { c: _, out: o } => return o.get(0),
+    //         RState::Split { out: o } => return o.get(idx),
+    //         _ => unimplemented!(),
+    //     }
+    // }
+
+    pub fn get_char(&self) -> char {
         let State(ref s) = *self;
         match s.borrow().clone() {
-            RState::Char { c: _, out: o } => return o.get(0),
-            RState::Split { out: o } => return o.get(idx),
+            RState::Char { c: Some(c), out: _ } => return c,
             _ => unimplemented!(),
         }
     }
@@ -80,10 +84,18 @@ impl State {
             false
         }
     }
+
+    pub fn is_matching(&self) -> bool {
+        let State(ref s) = self;
+        match s.borrow().clone() {
+            RState::Matching => true,
+            _ => false,
+        }
+    }
 }
 
 #[derive(Debug, PartialEq)]
-pub struct OutVec(Vec<State>);
+pub struct OutVec(pub Vec<State>);
 
 impl Clone for OutVec {
     fn clone(&self) -> Self {

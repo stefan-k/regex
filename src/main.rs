@@ -29,34 +29,62 @@ impl List {
             .count() > 0
     }
 
-    pub fn add_state(&mut self, s: &State) -> &mut Self {
-        if s.is_split() {
-            self.add_state(&s.get_out(0));
-            self.add_state(&s.get_out(1));
-        } else {
-            self.s.push(s.clone());
+    pub fn add_start(&mut self, start: &State) -> &mut Self {
+        self.add_state(&OutVec::new(vec![start.clone()]))
+    }
+
+    pub fn add_state(&mut self, o: &OutVec) -> &mut Self {
+        let OutVec(ref o) = *o;
+        for s in o.iter() {
+            if s.is_split() {
+                self.add_state(&s.clone_out());
+            } else {
+                self.s.push(s.clone());
+            }
         }
         self
     }
+
+    pub fn clear(&mut self) {
+        self.s.clear();
+    }
 }
 
-fn fa_match(start: &State, s: String, l1: &mut List, l2: &mut List) -> bool {
-    true
+fn fa_match(start: &State, s: String) -> bool {
+    let mut clist = List::new();
+    let mut nlist = List::new();
+    clist.add_start(start);
+    for c in s.chars() {
+        nlist.clear();
+        for st in clist.s.iter() {
+            // if st.is_split() || st.is_matching() {
+            if !st.is_matching() {
+                if st.is_split() {
+                    nlist.add_start(&st);
+                } else if st.get_char() == c {
+                    nlist.add_state(&st.clone_out());
+                }
+            }
+        }
+        std::mem::swap(&mut clist, &mut nlist);
+    }
+    clist.is_match()
 }
 
 fn main() {
     // let re = "abb.+.a.".to_owned();
     // let re = "ab.c.".to_owned();
     // let re = "ab.".to_owned();
-    let re = "ab|c.".to_owned();
-    // let re = "a?".to_owned();
+    // let re = "ab|c.".to_owned();
+    let re = "a?".to_owned();
     // let re = "a+".to_owned();
+    // let re = "a*".to_owned();
     let start = post2nfa(re);
-    println!("{:#?}", start);
-    let input = "ab".to_owned();
-    let mut l1: List;
-    let mut l2: List;
-    // let bla = fa_match(&start, input, &mut l1, &mut l2);
+    // println!("{:#?}", start);
+    let input = "a".to_owned();
+    // let input = "abbbba".to_owned();
+    let bla = fa_match(&start, input);
+    println!("{:#?}", bla);
 
     // Simulating the NFA
 }

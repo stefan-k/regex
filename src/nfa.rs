@@ -28,6 +28,7 @@ pub fn post2nfa(postfix: String) -> State {
 
     for x in postfix.chars() {
         match x {
+            // catenation
             '.' => {
                 let e2 = stack.pop().unwrap();
                 let mut e1 = stack.pop().unwrap();
@@ -35,6 +36,7 @@ pub fn post2nfa(postfix: String) -> State {
                 let mut e = Frag::new(e1.start.clone(), e2.out.clone());
                 stack.push(e);
             }
+            // alternation
             '|' => {
                 let e2 = stack.pop().unwrap();
                 let e1 = stack.pop().unwrap();
@@ -42,6 +44,7 @@ pub fn post2nfa(postfix: String) -> State {
                 let mut e = Frag::new(s, append(&e1.out, &e2.out));
                 stack.push(e);
             }
+            // zero or one
             '?' => {
                 let e1 = stack.pop().unwrap();
                 let e2 = State::new_empty();
@@ -49,6 +52,7 @@ pub fn post2nfa(postfix: String) -> State {
                 let mut e = Frag::new(s, append(&e1.out, &OutVec::new(vec![e2.clone()])));
                 stack.push(e);
             }
+            // zero or more
             '*' => {
                 let mut e1 = stack.pop().unwrap();
                 let e2 = State::new_empty();
@@ -58,6 +62,7 @@ pub fn post2nfa(postfix: String) -> State {
                 let mut e = Frag::new(s.clone(), s.clone_out());
                 stack.push(e);
             }
+            // one or more
             '+' => {
                 let mut e1 = stack.pop().unwrap();
                 let e2 = State::new_empty();
@@ -67,6 +72,7 @@ pub fn post2nfa(postfix: String) -> State {
                 let mut e = Frag::new(e1.start.clone(), s.clone_out());
                 stack.push(e);
             }
+            // character
             c => {
                 let s = State::new_char(c);
                 let o = s.clone_out();
