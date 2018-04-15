@@ -143,3 +143,68 @@ pub fn fa_match(start: &State, s: String) -> bool {
     }
     clist.is_match()
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn catenation() {
+        let re = "ab.".to_owned();
+        let start = post2nfa(re);
+        assert_eq!(true, fa_match(&start, "ab".to_owned()));
+        assert_eq!(false, fa_match(&start, "ba".to_owned()));
+        assert_eq!(false, fa_match(&start, "a".to_owned()));
+        assert_eq!(false, fa_match(&start, "abab".to_owned()));
+        assert_eq!(false, fa_match(&start, "".to_owned()));
+    }
+
+    #[test]
+    fn alternation() {
+        let re = "ab|".to_owned();
+        let start = post2nfa(re);
+        assert_eq!(true, fa_match(&start, "a".to_owned()));
+        assert_eq!(true, fa_match(&start, "b".to_owned()));
+        assert_eq!(false, fa_match(&start, "".to_owned()));
+        assert_eq!(false, fa_match(&start, "ba".to_owned()));
+        assert_eq!(false, fa_match(&start, "c".to_owned()));
+        assert_eq!(false, fa_match(&start, "bb".to_owned()));
+        assert_eq!(false, fa_match(&start, "bvccb".to_owned()));
+    }
+
+    #[test]
+    fn zero_or_one() {
+        let re = "a?".to_owned();
+        let start = post2nfa(re);
+        assert_eq!(true, fa_match(&start, "a".to_owned()));
+        assert_eq!(true, fa_match(&start, "".to_owned()));
+        assert_eq!(false, fa_match(&start, "aaaa".to_owned()));
+        assert_eq!(false, fa_match(&start, "c".to_owned()));
+        assert_eq!(false, fa_match(&start, "bb".to_owned()));
+        assert_eq!(false, fa_match(&start, "bvccb".to_owned()));
+    }
+
+    #[test]
+    fn zero_or_more() {
+        let re = "a*".to_owned();
+        let start = post2nfa(re);
+        assert_eq!(true, fa_match(&start, "a".to_owned()));
+        assert_eq!(true, fa_match(&start, "".to_owned()));
+        assert_eq!(true, fa_match(&start, "aaaa".to_owned()));
+        assert_eq!(false, fa_match(&start, "c".to_owned()));
+        assert_eq!(false, fa_match(&start, "bb".to_owned()));
+        assert_eq!(false, fa_match(&start, "bvccb".to_owned()));
+    }
+
+    #[test]
+    fn one_or_more() {
+        let re = "a+".to_owned();
+        let start = post2nfa(re);
+        assert_eq!(true, fa_match(&start, "a".to_owned()));
+        assert_eq!(true, fa_match(&start, "aaaa".to_owned()));
+        assert_eq!(false, fa_match(&start, "".to_owned()));
+        assert_eq!(false, fa_match(&start, "c".to_owned()));
+        assert_eq!(false, fa_match(&start, "bb".to_owned()));
+        assert_eq!(false, fa_match(&start, "bvccb".to_owned()));
+    }
+}
