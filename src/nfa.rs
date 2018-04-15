@@ -5,7 +5,9 @@
 // http://opensource.org/licenses/MIT>, at your option. This file may not be
 // copied, modified, or distributed except according to those terms.
 
+use std;
 use fa::{append, OutVec, State};
+use fa::RState::Matching;
 
 #[derive(Debug)]
 struct Frag {
@@ -83,4 +85,61 @@ pub fn post2nfa(postfix: String) -> State {
     let mut e = stack.pop().unwrap();
     e.attach(&State::new_matching());
     e.start
+}
+
+struct List {
+    s: Vec<State>,
+}
+
+impl List {
+    pub fn new() -> Self {
+        List { s: vec![] }
+    }
+
+    pub fn is_match(&self) -> bool {
+        self.s
+            .iter()
+            .filter(|State(x)| x.borrow().clone() == Matching)
+            .count() > 0
+    }
+
+    pub fn add_start(&mut self, start: &State) -> &mut Self {
+        self.add_state(&OutVec::new(vec![start.clone()]))
+    }
+
+    pub fn add_state(&mut self, o: &OutVec) -> &mut Self {
+        let OutVec(ref o) = *o;
+        for s in o.iter() {
+            if s.is_split() {
+                self.add_state(&s.clone_out());
+            } else {
+                self.s.push(s.clone());
+            }
+        }
+        self
+    }
+
+    pub fn clear(&mut self) {
+        self.s.clear();
+    }
+}
+
+pub fn fa_match(start: &State, s: String) -> bool {
+    let mut clist = List::new();
+    let mut nlist = List::new();
+    clist.add_start(start);
+    for c in s.chars() {
+        nlist.clear();
+        for st in clist.s.iter() {
+            if !st.is_matching() {
+                if st.is_split() {
+                    nlist.add_start(&st);
+                } else if st.get_char() == c {
+                    nlist.add_state(&st.clone_out());
+                }
+            }
+        }
+        std::mem::swap(&mut clist, &mut nlist);
+    }
+    clist.is_match()
 }
